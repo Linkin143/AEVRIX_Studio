@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id
+  name        String
+  createdAt   DateTime     @default(now())
+  generations Generation[]
+}
+
+model Generation {
+  id                   String            @id
+  userId               String
+  user                 User              @relation(fields: [userId], references: [id])
+  modelId               String
+  provider              String
+  providerGenerationId String?           @unique
+  prompt                String
+  enhancedPrompt        String?
+  duration              Int
+  resolution            String
+  aspectRatio           String
+  generateAudio         Boolean           @default(true)
+  seed                   Int?
+  status                 String
+  progress               Int               @default(0)
+  estimatedCost          Float?
+  actualCost             Float?
+  creditsReserved        Float             @default(0)
+  creditsUsed            Float             @default(0)
+  outputPath             String?
+  thumbnailPath          String?
+  errorMessage           String?
+  favorite               Boolean           @default(false)
+  idempotencyKey         String?            @unique
+  parentGenerationId     String?
+  parent                 Generation?        @relation("GenerationRetry", fields: [parentGenerationId], references: [id], onDelete: SetNull)
+  children               Generation[]       @relation("GenerationRetry")
+  createdAt              DateTime            @default(now())
+  startedAt              DateTime?
+  completedAt            DateTime?
+  canceledAt             DateTime?
+  assets                 GenerationAsset[]
+  creditTransactions     CreditTransaction[]
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([modelId])
+  @@index([userId])
+}
+
+model Asset {
+  id          String            @id
+  type        String
+  originalName String
+  storagePath String            @unique
+  mimeType    String
+  sizeBytes   Int
+  width       Int?
+  height      Int?
+  duration    Float?
+  createdAt   DateTime          @default(now())
+  generations GenerationAsset[]
+
+  @@index([createdAt])
+  @@index([type])
+}
+
+model GenerationAsset {
+  generationId String
+  assetId      String
+  role         String
+  referenceIndex Int?
+  generation   Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  asset        Asset      @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@id([generationId, assetId, role])
+}
+
+model Model {
+  id                String  @id
+  displayName       String
+  provider          String
+  providerModel     String
+  enabled           Boolean @default(true)
+  configurationJson String
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model CreditWallet {
+  id       String @id
+  balance  Float  @default(1000)
+  reserved Float  @default(0)
+}
+
+model CreditTransaction {
+  id           String      @id
+  type         String
+  amount       Float
+  generationId String?
+  generation   Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  description  String
+  createdAt    DateTime    @default(now())
+
+  @@index([generationId])
+}
+
+model WebhookEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+}
+
+model Preset {
+  id             String @id
+  name           String
+  description    String
+  modelId        String
+  aspectRatio    String
+  duration       Int
+  resolution     String
+  promptModifier String
+  generateAudio  Boolean @default(true)
+}

@@ -1,0 +1,1 @@
+export default function Loading() { return <div className="stack" aria-label="Loading"><div className="skeleton" style={{ minHeight: 60 }}/><div className="skeleton" style={{ minHeight: 360 }}/></div>; }
