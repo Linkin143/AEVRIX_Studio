@@ -1,10 +1,17 @@
 import type { CostEstimate } from "@aevrix/shared-types";
 
+// Current Replicate per-second pricing (USD). The comparison sheet publishes an
+// exact anchor for each model's closest-to-720p resolution (and the extra H3
+// tier); other resolutions are scaled from that anchor by pixel area so the
+// studio estimate tracks Replicate without inventing unlisted tiers.
+//   Seedance 2.5 720p $0.2312 · Seedance 2.0 720p $0.18
+//   MiniMax H3 768P $0.08 / 2K $0.13
+//   WAN 3.0 (published per-second): 480p $0.05 · 720p $0.10 · 1080p $0.20
 const perSecond: Record<string, Record<string, number>> = {
-  "seedance-2.0": { "480p": 0.04, "720p": 0.08, "768p": 0.09, "1080p": 0.14, "2K": 0.2, "4K": 0.28 },
-  "seedance-2.5": { "480p": 0.05, "720p": 0.09, "768p": 0.1, "1080p": 0.16, "2K": 0.23, "4K": 0.32 },
-  "minimax-h3": { "480p": 0.04, "720p": 0.07, "768p": 0.08, "1080p": 0.13, "2K": 0.19, "4K": 0.27 },
-  "wan-3.0": { "480p": 0.03, "720p": 0.06, "768p": 0.07, "1080p": 0.11, "2K": 0.17, "4K": 0.25 },
+  "seedance-2.5": { "480p": 0.1, "720p": 0.2312 },
+  "seedance-2.0": { "480p": 0.08, "720p": 0.18, "1080p": 0.41, "4k": 1.62 },
+  "minimax-h3": { "768P": 0.08, "2K": 0.13 },
+  "wan-3.0": { "480p": 0.05, "720p": 0.1, "1080p": 0.2 },
 };
 export function estimateCost(modelId: string, resolution: string, duration: number): CostEstimate {
   const rate = perSecond[modelId]?.[resolution];

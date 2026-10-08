@@ -33,9 +33,9 @@ export async function createGeneration(input: CreateGenerationRequest, parentGen
   if (data.idempotencyKey) { const existing = await prisma.generation.findUnique({ where: { idempotencyKey: data.idempotencyKey } }); if (existing) return existing; }
   const cost = estimateCost(data.modelId, data.resolution, data.duration); const id = crypto.randomUUID();
   return prisma.$transaction(async (tx) => {
-    const wallet = await tx.creditWallet.findUnique({ where: { id: "local-wallet" } });
-    if (!wallet || wallet.balance < cost.credits) throw new AppError(402, "INSUFFICIENT_CREDITS", "Not enough local credits are available for this generation.");
-    await tx.creditWallet.update({ where: { id: wallet.id }, data: { balance: { decrement: cost.credits }, reserved: { increment: cost.credits } } });
+    // Billing runs on real Replicate credits, so the local wallet never blocks
+    // or drains — it only tracks `reserved`/`creditsUsed` for the stats UI.
+    await tx.creditWallet.update({ where: { id: "local-wallet" }, data: { reserved: { increment: cost.credits } } });
     const generation = await tx.generation.create({ data: { id, userId: "local-user", modelId: data.modelId, provider: model.provider, prompt: data.prompt, enhancedPrompt: data.enhancedPrompt, duration: data.duration, resolution: data.resolution, aspectRatio: data.aspectRatio, generateAudio: data.generateAudio, seed: data.seed, status: "QUEUED", estimatedCost: cost.providerCost, creditsReserved: cost.credits, idempotencyKey: data.idempotencyKey, parentGenerationId, assets: { create: assetLinks.map((item) => ({ assetId: item.assetId, role: item.role, referenceIndex: item.referenceIndex })) } } });
     await tx.creditTransaction.create({ data: { id: crypto.randomUUID(), type: "RESERVE", amount: cost.credits, generationId: id, description: `Reserved for ${model.displayName}` } });
     return generation;
@@ -45,7 +45,8 @@ export async function releaseCredits(generationId: string, description: string) 
   await prisma.$transaction(async (tx) => {
     const generation = await tx.generation.findUnique({ where: { id: generationId } });
     if (!generation || generation.creditsReserved <= 0) return;
-    await tx.creditWallet.update({ where: { id: "local-wallet" }, data: { balance: { increment: generation.creditsReserved }, reserved: { decrement: generation.creditsReserved } } });
+    // Balance is never debited, so only clear the reservation.
+    await tx.creditWallet.update({ where: { id: "local-wallet" }, data: { reserved: { decrement: generation.creditsReserved } } });
     await tx.generation.update({ where: { id: generationId }, data: { creditsReserved: 0 } });
     await tx.creditTransaction.create({ data: { id: crypto.randomUUID(), type: "REFUND", amount: generation.creditsReserved, generationId, description } });
   });

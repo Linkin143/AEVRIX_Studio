@@ -9,6 +9,8 @@
     "dev:web": "npm run dev --workspace @aevrix/web",
     "dev:api": "npm run dev --workspace @aevrix/api",
     "build": "npm run build --workspace @aevrix/shared-types && npm run build --workspace @aevrix/api && npm run build --workspace @aevrix/web",
+    "validate:models": "node scripts/validate-models.mjs",
+    "test:replicate": "node scripts/test-replicate.mjs",
     "start": "concurrently -n api,web \"npm run start --workspace @aevrix/api\" \"npm run start --workspace @aevrix/web\"",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "npm run test:e2e --workspace @aevrix/web",

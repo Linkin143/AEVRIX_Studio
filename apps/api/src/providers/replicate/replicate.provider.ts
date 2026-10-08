@@ -1,7 +1,7 @@
 import Replicate from "replicate";
 import { env } from "../../config/env.js";
 import { AppError } from "../../middleware/errors.js";
-import { mapSeedanceInput } from "./replicate.mapper.js";
+import { mapProviderInput } from "./replicate.mapper.js";
 import type { ProviderGenerationRequest, ProviderGenerationResult, ProviderGenerationStatus, ProviderStatusName, VideoProvider } from "../provider.interface.js";
 
 const statusMap: Record<string, ProviderStatusName> = { starting: "starting", processing: "processing", succeeded: "succeeded", failed: "failed", canceled: "canceled", aborted: "canceled" };
@@ -12,7 +12,7 @@ export class ReplicateProvider implements VideoProvider {
     this.client = new Replicate({ auth: token });
   }
   async createGeneration(request: ProviderGenerationRequest): Promise<ProviderGenerationResult> {
-    const input = await mapSeedanceInput(request);
+    const input = await mapProviderInput(request);
     const options: Record<string, unknown> = { model: request.model, input };
     if (request.webhookUrl) { options.webhook = request.webhookUrl; options.webhook_events_filter = ["start", "completed"]; }
     const prediction = await this.client.predictions.create(options as never);

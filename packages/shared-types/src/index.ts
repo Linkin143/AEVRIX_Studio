@@ -13,7 +13,8 @@ export interface ModelCapabilities {
 export interface ModelDefinition {
   id: string; displayName: string; provider: string; providerModel: string; type: "video";
   description: string; capabilities: ModelCapabilities; resolutions: string[];
-  aspectRatios: string[]; durations: number[]; minDuration: number; maxDuration: number; enabled: boolean;
+  aspectRatios: string[]; durations: number[]; minDuration: number; maxDuration: number;
+  maxReferenceImages: number; maxReferenceVideos: number; maxReferenceAudio: number; enabled: boolean;
 }
 export interface Asset {
   id: string; type: AssetType; originalName: string; mimeType: string; sizeBytes: number;
