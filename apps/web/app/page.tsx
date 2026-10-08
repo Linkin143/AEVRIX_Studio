@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowRight, AtSign, Box, Camera, Check, Clapperboard, ImagePlus, Layers3,
+  AlertTriangle, ArrowRight, AtSign, Box, Camera, Check, Clapperboard, ImagePlus, Layers3,
   Lightbulb, Move3d, Music2, Play, Settings2, Sparkles, Tag, Video,
   WandSparkles, X, Zap,
 } from "lucide-react";
@@ -78,6 +78,8 @@ export default function CreatePage() {
   const { data: settings, isError: settingsUnavailable } = useQuery<Settings>({ queryKey: ["settings"], queryFn: () => api("/settings") });
   const { data: health } = useQuery<Health>({ queryKey: ["health"], queryFn: () => api("/health") });
   const model = models.find((item) => item.id === values.modelId);
+  // Seedance rejects AI-generated / synthetic human faces via content moderation.
+  const isSeedance = Boolean(model && model.id.startsWith("seedance"));
   const generationReady = settings ? settings.mockMode || settings.replicateConfigured : !settingsUnavailable;
   const imageReady = mode !== "image" || Boolean(values.imageAssetId);
 
@@ -415,7 +417,7 @@ export default function CreatePage() {
             </div>
             {errors.prompt && <div className="alert">{errors.prompt.message}</div>}
             <div className="idea-row"><span><Lightbulb size={13}/>Try an idea</span><div>{promptIdeas.slice(0, 3).map((idea, index) => <button type="button" key={idea} onClick={() => setPlainPrompt(idea)}>{index + 1}</button>)}</div><small>{promptIdeas.find((idea) => idea === values.prompt) || "Pick a starter, then make it yours."}</small></div>
-            {model?.capabilities.referenceImages && optionsFor("IMAGE").length > 0 && <div className="prompt-tagger"><span><Tag size={13}/>Tap an image to tag it, or type @ in your prompt <small>Tag the same image multiple times to reference it in different places</small></span><div className="ref-image-strip">{optionsFor("IMAGE").map((asset) => <RefImageCard key={asset.id} asset={asset} index={taggedAssetIds.indexOf(asset.id)} tagged={taggedAssetIds.includes(asset.id)} onToggle={() => insertImageChip(asset)}/>)}</div></div>}
+            {model?.capabilities.referenceImages && optionsFor("IMAGE").length > 0 && <div className="prompt-tagger"><span><Tag size={13}/>Tap an image to tag it, or type @ in your prompt <small>Tag the same image multiple times to reference it in different places</small></span>{isSeedance && <span className="tagger-face-flag"><AlertTriangle size={12}/>Seedance will reject synthetic/AI faces — use a product/scene image here, or MiniMax H3 for characters.</span>}<div className="ref-image-strip">{optionsFor("IMAGE").map((asset) => <RefImageCard key={asset.id} asset={asset} index={taggedAssetIds.indexOf(asset.id)} tagged={taggedAssetIds.includes(asset.id)} onToggle={() => insertImageChip(asset)}/>)}</div></div>}
             {taggableRefs.length > 0 && <div className="prompt-references"><span>Tag a reference</span>{taggableRefs.map((asset) => <button type="button" key={asset.id} className={taggedAssetIds.includes(asset.id) ? "tagged" : ""} onClick={() => insertImageChip(asset)}>{asset.type === "VIDEO" ? <Video size={12}/> : <Music2 size={12}/>}{asset.originalName}{taggedAssetIds.includes(asset.id) && <span className="ref-num">[{taggedAssetIds.indexOf(asset.id) + 1}]</span>}</button>)}</div>}
           </div>
         </section>
@@ -423,6 +425,7 @@ export default function CreatePage() {
         <section className="panel reference-panel">
           <div className="panel-header"><div className="step-heading"><span>2</span><div><h2>Add visual references <em>Optional</em></h2><p className="section-copy">Guide the character, opening frame, movement, or soundtrack.</p></div></div><Link href="/assets" className="button small ghost">Browse library</Link></div>
           <div className="panel-body stack">
+            {isSeedance && <div className="seedance-face-flag" role="alert"><AlertTriangle size={15}/><div><strong>Seedance rejects synthetic faces</strong><p>AI-generated human characters, realistic celebrity likenesses, or anything that looks like a synthetic face will be flagged and fail. For a specific character, describe their appearance in the prompt text instead — or tag the character image on MiniMax H3. Product, object, scene and style images work fine here.</p></div></div>}
             <div className="reference-grid enhanced"><UploadCard type="IMAGE" icon={<ImagePlus/>} label={mode === "image" ? "Upload image to animate" : "Add an image"} accept="image/jpeg,image/png,image/webp" upload={upload}/>{model?.capabilities.referenceVideos && <UploadCard type="VIDEO" icon={<Video/>} label="Add motion reference" accept="video/mp4,video/webm,video/quicktime" upload={upload}/>} {model?.capabilities.referenceAudio && <UploadCard type="AUDIO" icon={<Music2/>} label="Add audio reference" accept="audio/mpeg,audio/wav,audio/mp4,audio/aac" upload={upload}/>}</div>
             {values.imageAssetId && <SelectedAsset asset={assets.find((item) => item.id === values.imageAssetId)} label="Opening image" onRemove={() => setValue("imageAssetId", "")}/>} 
             {model?.capabilities.imageToVideo && <div className="two-col"><AssetSelect label="Opening image" assets={optionsFor("IMAGE")} value={values.imageAssetId || ""} onChange={(value) => setValue("imageAssetId", value)}/>{model.capabilities.firstLastFrame && <AssetSelect label="End frame" assets={optionsFor("IMAGE")} value={values.lastFrameAssetId || ""} onChange={(value) => setValue("lastFrameAssetId", value)}/>}</div>}
