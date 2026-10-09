@@ -3,7 +3,7 @@ import { MODEL_REGISTRY } from "../models/registry.js";
 import { AppError } from "../middleware/errors.js";
 
 export const createGenerationSchema = z.object({
-  modelId: z.string(), prompt: z.string().trim().min(1).max(4000), enhancedPrompt: z.string().max(5000).optional(),
+  modelId: z.string(), prompt: z.string().trim().min(1).max(200000), enhancedPrompt: z.string().max(201000).optional(),
   duration: z.number().int(), resolution: z.string(), aspectRatio: z.string(), generateAudio: z.boolean(),
   seed: z.number().int().min(0).max(2147483647).optional(), imageAssetId: z.string().uuid().optional(),
   lastFrameAssetId: z.string().uuid().optional(), referenceImageAssetIds: z.array(z.string().uuid()).max(30).default([]),
@@ -14,6 +14,7 @@ export const createGenerationSchema = z.object({
 export function validateModelRequest(data: z.infer<typeof createGenerationSchema>) {
   const model = MODEL_REGISTRY[data.modelId];
   if (!model?.enabled) throw new AppError(400, "MODEL_UNAVAILABLE", "The selected model is not available.");
+  if (model.maxPromptChars && data.prompt.length > model.maxPromptChars) throw new AppError(400, "PROMPT_TOO_LONG", `${model.displayName} supports prompts up to ${model.maxPromptChars} characters.`);
   if (!Number.isInteger(data.duration) || data.duration < model.minDuration || data.duration > model.maxDuration) throw new AppError(400, "INVALID_DURATION", `Choose a supported duration between ${model.minDuration} and ${model.maxDuration} seconds.`);
   if (!model.resolutions.includes(data.resolution)) throw new AppError(400, "INVALID_RESOLUTION", "The selected resolution is not supported.");
   if (!model.aspectRatios.includes(data.aspectRatio)) throw new AppError(400, "INVALID_ASPECT_RATIO", "The selected aspect ratio is not supported.");

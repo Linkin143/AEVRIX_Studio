@@ -15,6 +15,9 @@ export interface ModelDefinition {
   description: string; capabilities: ModelCapabilities; resolutions: string[];
   aspectRatios: string[]; durations: number[]; minDuration: number; maxDuration: number;
   maxReferenceImages: number; maxReferenceVideos: number; maxReferenceAudio: number; enabled: boolean;
+  // Hard prompt character cap. Only set where the provider documents one
+  // (Seedance 2.0 = 4000). Omitted/undefined means no documented limit.
+  maxPromptChars?: number;
 }
 export interface Asset {
   id: string; type: AssetType; originalName: string; mimeType: string; sizeBytes: number;

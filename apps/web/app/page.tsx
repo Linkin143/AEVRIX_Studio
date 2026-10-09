@@ -19,7 +19,7 @@ import { api, ApiClientError, uploadAsset } from "@/lib/api";
 
 const schema = z.object({
   modelId: z.string(),
-  prompt: z.string().trim().min(1, "Describe the video you want to create.").max(4000),
+  prompt: z.string().trim().min(1, "Describe the video you want to create.").max(200000),
   duration: z.number(), resolution: z.string(), aspectRatio: z.string(), generateAudio: z.boolean(),
   seed: z.string().refine((value) => value === "" || (Number.isInteger(Number(value)) && Number(value) >= 0), "Use a positive whole number."),
   imageAssetId: z.string().optional(), lastFrameAssetId: z.string().optional(),
@@ -298,6 +298,7 @@ export default function CreatePage() {
     if (!imageReady) { setMessage("Add an opening image before using Animate image mode."); return; }
     const { text: promptText, assetIds: tagged } = serializeEditor();
     const prompt = promptText.trim() || data.prompt;
+    if (model?.maxPromptChars && prompt.length > model.maxPromptChars) { setMessage(`${model.displayName} supports prompts up to ${model.maxPromptChars} characters. Yours is ${prompt.length}.`); return; }
     // Tagged chips can be images, videos, or audio — route each id to its own
     // reference list by asset type, keeping any ids already set via the dropdowns.
     const taggedByType = (type: Asset["type"]) => tagged.filter((id) => assets.find((item) => item.id === id)?.type === type);
@@ -412,7 +413,7 @@ export default function CreatePage() {
                   ))}
                 </div>
               )}
-              <span className="prompt-count">{promptLength} / 4000</span>
+              <span className={`prompt-count ${model?.maxPromptChars && promptLength > model.maxPromptChars ? "over" : ""}`}>{model?.maxPromptChars ? `${promptLength} / ${model.maxPromptChars}` : `${promptLength} characters`}</span>
               <button type="button" className="prompt-magic" disabled={!values.prompt} onClick={() => enhance.mutate()} aria-label="Enhance prompt"><Sparkles size={15}/></button>
             </div>
             {errors.prompt && <div className="alert">{errors.prompt.message}</div>}

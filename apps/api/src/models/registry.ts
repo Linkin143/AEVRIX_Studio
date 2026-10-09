@@ -25,6 +25,7 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     aspectRatios: ["adaptive", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
     durations: [5, 10, 15], minDuration: 4, maxDuration: 15,
     maxReferenceImages: 9, maxReferenceVideos: 3, maxReferenceAudio: 3,
+    maxPromptChars: 4000, // ByteDance documents a 4000-char cap for Seedance 2.0 only.
   },
   "minimax-h3": {
     id: "minimax-h3", displayName: "MiniMax H3", provider: "replicate",
